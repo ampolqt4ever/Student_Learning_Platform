@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 
 /**
  * Talks to the SignMath backend (see /signmath-backend in the project root).
@@ -48,7 +49,7 @@ export async function fetchGestureConfig(): Promise<GestureConfig | null> {
   }
 }
 
-export function useGestureDetector(videoRef: React.RefObject<HTMLVideoElement>) {
+export function useGestureDetector(videoRef: RefObject<HTMLVideoElement>) {
   const [status, setStatus] = useState<ConnectionStatus>('idle');
   const [result, setResult] = useState<GestureResult>(EMPTY_RESULT);
 
@@ -97,16 +98,9 @@ export function useGestureDetector(videoRef: React.RefObject<HTMLVideoElement>) 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Mirror horizontally to match V1.py's cv2.flip(frame, 1) — both the
-        // training pipeline and the desktop app analyze a mirrored frame so
-        // gestures feel natural to perform in front of a webcam. Display the
-        // <video> with `transform: scaleX(-1)` so what's on screen lines up
-        // with the landmark coordinates the backend returns.
-        ctx.save();
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
+        // Capture the frame without flipping it so the preview and the backend
+        // use the same camera orientation.
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.restore();
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
